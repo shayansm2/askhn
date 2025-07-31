@@ -3,7 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/shayansm2/temporallm"
+	"github.com/shayansm2/temporallm/internal/chatbot"
+	"github.com/shayansm2/temporallm/internal/utils/llm"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 )
@@ -16,11 +17,11 @@ func main() {
 	}
 	defer c.Close()
 
-	w := worker.New(c, temporallm.TaskQueueName, worker.Options{})
-	llm := temporallm.NewLLM(temporallm.OllamaBaseURL, "", temporallm.OllamaModelGemma3)
-	activities := &temporallm.LLMActivities{LLM: &llm}
+	w := worker.New(c, chatbot.TaskQueueName, worker.Options{})
+	llm := llm.NewLLM(chatbot.OllamaBaseURL, "", chatbot.OllamaModelGemma3)
+	activities := &chatbot.LLMActivities{LLM: &llm}
 
-	w.RegisterWorkflow(temporallm.SimpleChat)
+	w.RegisterWorkflow(chatbot.SimpleChat)
 	w.RegisterActivity(activities)
 
 	// Start the Worker

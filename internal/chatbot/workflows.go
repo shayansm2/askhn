@@ -1,4 +1,4 @@
-package temporallm
+package chatbot
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ func SimpleChat(ctx workflow.Context, message string) (string, error) {
 	var llmActivities *LLMActivities
 
 	var response string
-	err := workflow.ExecuteActivity(ctx, llmActivities.Chat, message).Get(ctx, &response)
+	err := workflow.ExecuteActivity(ctx, llmActivities.SimpleChat, message).Get(ctx, &response)
 	if err != nil {
 		return "", fmt.Errorf("failed to get response from llm: %s", err)
 	}

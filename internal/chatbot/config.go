@@ -1,4 +1,4 @@
-package temporallm
+package chatbot
 
 const TaskQueueName = "default"
 
