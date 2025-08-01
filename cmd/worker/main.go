@@ -18,11 +18,15 @@ func main() {
 	defer c.Close()
 
 	w := worker.New(c, chatbot.TaskQueueName, worker.Options{})
+
 	llm := llm.NewLLM(chatbot.OllamaBaseURL, "", chatbot.OllamaModelGemma3)
-	activities := &chatbot.LLMActivities{LLM: &llm}
+	llmActivities := &chatbot.LLMActivities{LLM: &llm}
+	hnActivities := &chatbot.HackerNewsApiActivities{}
 
 	w.RegisterWorkflow(chatbot.SimpleChat)
-	w.RegisterActivity(activities)
+	w.RegisterWorkflow(chatbot.IndexHackerNewsStory)
+	w.RegisterActivity(llmActivities)
+	w.RegisterActivity(hnActivities)
 
 	// Start the Worker
 	err = w.Run(worker.InterruptCh())

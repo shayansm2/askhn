@@ -47,6 +47,7 @@ func (llm *LargeLanguageModel) Chat(message Message) (string, error) {
 	return chatCompletion.Choices[0].Message.Content, nil
 }
 
+// todo
 func (llm *LargeLanguageModel) ChatWithJSONFormat(message Message, result interface{}) error {
 	response, err := llm.Chat(message)
 	if err != nil {
@@ -59,6 +60,7 @@ func (llm *LargeLanguageModel) ChatWithJSONFormat(message Message, result interf
 	return nil
 }
 
+// todo
 func (llm *LargeLanguageModel) chatWithCriteria(message Message, check func(string) error) (string, error) {
 	response, err := llm.Chat(message)
 	if err != nil {

@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	message := "can you here me?"
+	// message := "can you here me?"
 
 	c, err := client.Dial(client.Options{})
 	if err != nil {
@@ -18,14 +18,15 @@ func main() {
 	}
 	defer c.Close()
 
-	workflowID := "simpleChat-" + uuid.New().String()
+	// workflowID := "simpleChat-" + uuid.New().String()
+	workflowID := "get-hn-18428497-" + uuid.New().String()
 
 	options := client.StartWorkflowOptions{
 		ID:        workflowID,
 		TaskQueue: chatbot.TaskQueueName,
 	}
 
-	_, err = c.ExecuteWorkflow(context.Background(), options, chatbot.SimpleChat, message)
+	_, err = c.ExecuteWorkflow(context.Background(), options, chatbot.IndexHackerNewsStory, 18428497)
 	if err != nil {
 		log.Fatalln("Unable to execute workflow", err)
 	}
