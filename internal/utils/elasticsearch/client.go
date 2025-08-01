@@ -1,4 +1,4 @@
-package textdb
+package elasticsearch
 
 import (
 	"log"

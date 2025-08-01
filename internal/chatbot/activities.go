@@ -3,8 +3,8 @@ package chatbot
 import (
 	"context"
 
+	"github.com/shayansm2/temporallm/internal/utils/elasticsearch"
 	"github.com/shayansm2/temporallm/internal/utils/llm"
-	"github.com/shayansm2/temporallm/internal/utils/textdb"
 )
 
 type LLMActivities struct {
@@ -23,9 +23,9 @@ func (i *HackerNewsApiActivities) RetrieveHackerNewsItem(ctx context.Context, id
 
 type IndexRequest struct {
 	IndexName string
-	Document  *HackerNewsResponse
+	Document  *ElasticSearchDocument
 }
 
 func (i *HackerNewsApiActivities) IndexInElasticsearch(ctx context.Context, req IndexRequest) error {
-	return textdb.Index(req.IndexName, req.Document)
+	return elasticsearch.IndexDocument(req.IndexName, req.Document)
 }

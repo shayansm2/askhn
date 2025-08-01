@@ -28,6 +28,7 @@ func IndexHackerNewsStory(ctx workflow.Context, id int) error {
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 	var hnActivities *HackerNewsApiActivities
+	var storyTitle string
 
 	items := []int{id}
 	for len(items) > 0 {
@@ -38,9 +39,18 @@ func IndexHackerNewsStory(ctx workflow.Context, id int) error {
 		if err != nil {
 			return fmt.Errorf("failed to retrieve hacker news for item %d: %s", item, err)
 		}
+		if hnResponse.Title != "" {
+			storyTitle = hnResponse.Title
+		}
 		req := IndexRequest{
-			IndexName: ElasticsearchIndex,
-			Document:  hnResponse,
+			IndexName: ElasticsearchIndexName,
+			Document: &ElasticSearchDocument{
+				Id:    hnResponse.Id,
+				Score: hnResponse.Score,
+				Title: storyTitle,
+				Type:  hnResponse.Type,
+				Text:  hnResponse.Text,
+			},
 		}
 		err = workflow.ExecuteActivity(ctx, hnActivities.IndexInElasticsearch, req).Get(ctx, nil)
 		if err != nil {
