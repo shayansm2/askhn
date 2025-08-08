@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	// message := "can you here me?"
+	message := "is kubernetes worth trying in my new startup?"
 
 	c, err := client.Dial(client.Options{})
 	if err != nil {
@@ -19,14 +19,15 @@ func main() {
 	defer c.Close()
 
 	// workflowID := "simpleChat-" + uuid.New().String()
-	workflowID := "get-hn-18428497-" + uuid.New().String()
+	// workflowID := "get-hn-23460066-" + uuid.New().String()
+	workflowID := "RAG-1-" + uuid.New().String()
 
 	options := client.StartWorkflowOptions{
 		ID:        workflowID,
 		TaskQueue: chatbot.TaskQueueName,
 	}
 
-	_, err = c.ExecuteWorkflow(context.Background(), options, chatbot.IndexHackerNewsStory, 18428497)
+	_, err = c.ExecuteWorkflow(context.Background(), options, chatbot.RetrivalAugmentedGeneration, message)
 	if err != nil {
 		log.Fatalln("Unable to execute workflow", err)
 	}

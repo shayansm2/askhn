@@ -1,8 +1,6 @@
 package chatbot
 
 import (
-	"strconv"
-
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
@@ -21,10 +19,6 @@ type ElasticSearchDocument struct {
 	Title string `json:"title"`
 	Type  string `json:"type"`
 	Text  string `json:"text"`
-}
-
-func (i *ElasticSearchDocument) GetID() string {
-	return strconv.Itoa(i.Id)
 }
 
 var ElasticsearchIndexSchema = &types.TypeMapping{
