@@ -3,9 +3,11 @@ package chatbot
 import (
 	"fmt"
 	"strings"
+
+	"github.com/shayansm2/temporallm/internal/elasticsearch"
 )
 
-func BuildSystemPrompt(searchResults []ElasticSearchDocument) string {
+func BuildSystemPrompt(searchResults []elasticsearch.ESDocument) string {
 	const promptTemplate = `You're a course teaching assistant. Answer the questions based on the CONTEXT from the hacker news comments.
 	Use only the facts from the CONTEXT when answering the questions.
 

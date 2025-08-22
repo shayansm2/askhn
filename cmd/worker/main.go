@@ -3,8 +3,9 @@ package main
 import (
 	"log"
 
-	"github.com/shayansm2/temporallm/internal/chatbot"
-	"github.com/shayansm2/temporallm/internal/utils/llm"
+	"github.com/shayansm2/temporallm/internal/config"
+	"github.com/shayansm2/temporallm/internal/llm"
+	"github.com/shayansm2/temporallm/internal/temporal"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 )
@@ -17,14 +18,14 @@ func main() {
 	}
 	defer c.Close()
 
-	w := worker.New(c, chatbot.TaskQueueName, worker.Options{})
-	llm := llm.NewLLM(chatbot.OllamaBaseURL, "", chatbot.OllamaModelGemma3)
-	w.RegisterWorkflow(chatbot.SimpleChat)
-	w.RegisterWorkflow(chatbot.IndexHackerNewsStory)
-	w.RegisterWorkflow(chatbot.RetrivalAugmentedGeneration)
-	w.RegisterActivity(&chatbot.LLMActivities{LLM: &llm})
-	w.RegisterActivity(&chatbot.HackerNewsApiActivities{})
-	w.RegisterActivity(&chatbot.ElasticsearchActivities{})
+	w := worker.New(c, config.Load().TaskQueueName, worker.Options{})
+	llm := llm.NewLLM(config.Load().OllamaBaseURL, "", config.Load().OllamaModel)
+	w.RegisterWorkflow(temporal.SimpleChatWorkflow)
+	w.RegisterWorkflow(temporal.IndexHackerNewsStoryWorkflow)
+	w.RegisterWorkflow(temporal.RetrivalAugmentedGenerationWorkflow)
+	w.RegisterActivity(&temporal.LLMActivities{LLM: &llm})
+	w.RegisterActivity(&temporal.HackerNewsApiActivities{})
+	w.RegisterActivity(&temporal.ElasticsearchActivities{})
 
 	// Start the Worker
 	err = w.Run(worker.InterruptCh())

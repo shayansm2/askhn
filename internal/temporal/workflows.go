@@ -1,13 +1,15 @@
-package chatbot
+package temporal
 
 import (
 	"fmt"
 	"time"
 
+	"github.com/shayansm2/temporallm/internal/chatbot"
+	"github.com/shayansm2/temporallm/internal/elasticsearch"
 	"go.temporal.io/sdk/workflow"
 )
 
-func SimpleChat(ctx workflow.Context, message string) (string, error) {
+func SimpleChatWorkflow(ctx workflow.Context, message string) (string, error) {
 	ao := workflow.ActivityOptions{
 		StartToCloseTimeout: time.Minute,
 	}
@@ -22,7 +24,7 @@ func SimpleChat(ctx workflow.Context, message string) (string, error) {
 	return response, nil
 }
 
-func IndexHackerNewsStory(ctx workflow.Context, id int) error {
+func IndexHackerNewsStoryWorkflow(ctx workflow.Context, id int) error {
 	ao := workflow.ActivityOptions{
 		StartToCloseTimeout: time.Minute,
 	}
@@ -35,7 +37,7 @@ func IndexHackerNewsStory(ctx workflow.Context, id int) error {
 	for len(items) > 0 {
 		item := items[0]
 		items = items[1:]
-		var hnResponse *HackerNewsResponse
+		var hnResponse *chatbot.HackerNewsResponse
 		err := workflow.ExecuteActivity(ctx, hnActivities.RetrieveHackerNewsItem, item).Get(ctx, &hnResponse)
 		if err != nil {
 			return fmt.Errorf("failed to retrieve hacker news for item %d: %s", item, err)
@@ -43,7 +45,7 @@ func IndexHackerNewsStory(ctx workflow.Context, id int) error {
 		if hnResponse.Title != "" {
 			storyTitle = hnResponse.Title
 		}
-		doc := &ElasticSearchDocument{
+		doc := &elasticsearch.ESDocument{
 			Id:    hnResponse.Id,
 			Score: hnResponse.Score,
 			Title: storyTitle,
@@ -59,13 +61,13 @@ func IndexHackerNewsStory(ctx workflow.Context, id int) error {
 	return nil
 }
 
-func RetrivalAugmentedGeneration(ctx workflow.Context, message string) (string, error) {
+func RetrivalAugmentedGenerationWorkflow(ctx workflow.Context, message string) (string, error) {
 	ao := workflow.ActivityOptions{
 		StartToCloseTimeout: time.Minute,
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 	var esActivities *ElasticsearchActivities
-	var esDocs []ElasticSearchDocument
+	var esDocs []elasticsearch.ESDocument
 	err := workflow.ExecuteActivity(ctx, esActivities.Search, &SearchRequest{Query: message, Size: 5}).Get(ctx, &esDocs)
 	if err != nil {
 		return "", fmt.Errorf("failed to search on elasticsearch: %s", err)
@@ -73,7 +75,7 @@ func RetrivalAugmentedGeneration(ctx workflow.Context, message string) (string, 
 
 	var llmActivities *LLMActivities
 	var response string
-	systemMsg := BuildSystemPrompt(esDocs)
+	systemMsg := chatbot.BuildSystemPrompt(esDocs)
 	err = workflow.ExecuteActivity(ctx, llmActivities.Chat, message, systemMsg).Get(ctx, &response)
 	if err != nil {
 		return "", fmt.Errorf("failed to get response from llm: %s", err)

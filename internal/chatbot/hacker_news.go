@@ -6,6 +6,15 @@ import (
 	"net/http"
 )
 
+type HackerNewsResponse struct {
+	Id    int    `json:"id"`
+	Kids  []int  `json:"kids"`
+	Score int    `json:"score"`
+	Title string `json:"title"`
+	Type  string `json:"type"`
+	Text  string `json:"text"`
+}
+
 func HackerNewsItem(id int) (*HackerNewsResponse, error) {
 	url := fmt.Sprintf("https://hacker-news.firebaseio.com/v0/item/%d.json", id)
 	response, err := http.Get(url)

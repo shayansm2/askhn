@@ -1,4 +1,4 @@
-package chatbot
+package elasticsearch
 
 import (
 	"context"
@@ -12,16 +12,20 @@ import (
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/textquerytype"
+	"github.com/shayansm2/temporallm/internal/config"
 )
 
 var once sync.Once
 var client *elasticsearch.TypedClient
 
 func GetClient() *elasticsearch.TypedClient {
+	log.Println("Getting client", config.Load().ElasticsearchURL)
 	once.Do(func() {
 		var err error
 		client, err = elasticsearch.NewTypedClient(elasticsearch.Config{
-			Addresses: []string{"http://localhost:9200"},
+			Addresses: []string{config.Load().ElasticsearchURL},
+			Username:  config.Load().ElasticsearchUser,
+			Password:  config.Load().ElasticsearchPass,
 		})
 		if err != nil {
 			log.Fatalf("Error creating the client: %s", err)
@@ -30,10 +34,20 @@ func GetClient() *elasticsearch.TypedClient {
 	return client
 }
 
+var ESIndexSchema = &types.TypeMapping{
+	Properties: map[string]types.Property{
+		"id":    types.IntegerNumberProperty{},
+		"score": types.IntegerNumberProperty{},
+		"title": types.TextProperty{},
+		"text":  types.TextProperty{},
+		"type":  types.KeywordProperty{},
+	},
+}
+
 func CreateElasticsearchIndex() error {
 	client := GetClient()
-	req := client.Indices.Create(ElasticsearchIndexName)
-	req.Mappings(ElasticsearchIndexSchema)
+	req := client.Indices.Create(config.Load().ElasticsearchIndexName)
+	req.Mappings(ESIndexSchema)
 	res, err := req.Do(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed to create index: %w", err)
@@ -44,16 +58,24 @@ func CreateElasticsearchIndex() error {
 	return nil
 }
 
-func IndexDocument(document ElasticSearchDocument) error {
+type ESDocument struct {
+	Id    int    `json:"id"`
+	Score int    `json:"score"`
+	Title string `json:"title"`
+	Type  string `json:"type"`
+	Text  string `json:"text"`
+}
+
+func IndexDocument(document ESDocument) error {
 	_, err := GetClient().
-		Index(ElasticsearchIndexName).
+		Index(config.Load().ElasticsearchIndexName).
 		Id(strconv.Itoa(document.Id)).
 		Request(document).
 		Do(context.TODO())
 	return err
 }
 
-func SearchDocuments(query string, size int) ([]ElasticSearchDocument, error) {
+func SearchDocuments(query string, size int) ([]ESDocument, error) {
 	req := search.Request{
 		Size: &size,
 		Query: &types.Query{
@@ -71,13 +93,13 @@ func SearchDocuments(query string, size int) ([]ElasticSearchDocument, error) {
 		},
 	}
 
-	var result []ElasticSearchDocument
+	var result []ESDocument
 	res, err := GetClient().Search().Index("hacker_news").Request(&req).Do(context.TODO())
 	if err != nil {
 		return result, err
 	}
 	for _, hit := range res.Hits.Hits {
-		var doc ElasticSearchDocument
+		var doc ESDocument
 		if err := json.Unmarshal(hit.Source_, &doc); err != nil {
 			return result, err
 		}
