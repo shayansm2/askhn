@@ -2,8 +2,7 @@ import { UserOutlined } from "@ant-design/icons";
 import { Bubble, Sender, useXAgent, useXChat } from "@ant-design/x";
 import { Flex, type GetProp } from "antd";
 import React from "react";
-
-const sleep = () => new Promise((resolve) => setTimeout(resolve, 1000));
+import ReactMarkdown from "react-markdown";
 
 const roles: GetProp<typeof Bubble.List, "roles"> = {
   ai: {
@@ -20,27 +19,48 @@ const roles: GetProp<typeof Bubble.List, "roles"> = {
   },
 };
 
-let mockSuccess = false;
-
 const App = () => {
   const [content, setContent] = React.useState("");
 
   // Agent for request
+  const [ollamaAgent] = useXAgent<string, { message: string }, string>({
+    request: async ({ message }, { onSuccess, onError }) => {
+      try {
+        const response = await fetch("http://localhost:11434/api/generate", {
+          method: "POST",
+          body: JSON.stringify({
+            model: "llama3.2",
+            prompt: message,
+            stream: false,
+          }),
+        });
+        const data = await response.json();
+        onSuccess(data.response);
+      } catch (error) {
+        console.error(error);
+        onError(new Error("Mock request failed"));
+      }
+    },
+  });
+
   const [agent] = useXAgent<string, { message: string }, string>({
     request: async ({ message }, { onSuccess, onError }) => {
-      await sleep();
-      mockSuccess = !mockSuccess;
-      if (mockSuccess) {
-        onSuccess([`Mock success return. You said: ${message}`]);
+      try {
+        const response = await fetch(
+          "http://localhost:8080/v1/chat?message=" + message
+        );
+        const data = await response.json();
+        onSuccess(data.result);
+      } catch (error) {
+        console.error(error);
+        onError(new Error("request failed"));
       }
-
-      onError(new Error("Mock request failed"));
     },
   });
 
   // Chat messages
   const { onRequest, messages } = useXChat({
-    agent,
+    agent: agent,
     requestPlaceholder: "Waiting...",
     requestFallback: "Mock failed return. Please try again later.",
   });
@@ -54,7 +74,7 @@ const App = () => {
           key: id,
           loading: status === "loading",
           role: status === "local" ? "local" : "ai",
-          content: message,
+          content: <ReactMarkdown>{message}</ReactMarkdown>,
         }))}
       />
       <Sender
