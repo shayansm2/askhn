@@ -115,13 +115,175 @@ If you're not certain about some tools, ask in Slack.
   - [ ] helm chart
 - monitoring
 - UI
+  - [ ] API for chat
   - [ ] compatible with ollama api interface
 - evaluation
-  - [ ] ground truth data.
+  - [ ] **ground truth data**
+- monitoring
 - RAG
   - [ ] simple RAG
   - [ ] agentic RAG
 - tools
-  - [ ] chat & evakuate
+  - [ ] chat & evaluate
   - [ ] with Response Schema
   - [ ] context decorator
+- project structure and best practices
+
+```
+temporallm/
+├── cmd/                          # Application entry points
+│   ├── client/                   # Temporal client application
+│   │   └── main.go
+│   ├── worker/                   # Temporal worker application
+│   │   └── main.go
+│   └── api/                      # HTTP API server (if needed)
+│       └── main.go
+├── internal/                     # Private application code
+│   ├── config/                   # Configuration management
+│   │   ├── config.go
+│   │   └── env.go
+│   ├── domain/                   # Business logic and domain models
+│   │   ├── models/               # Data structures and types
+│   │   │   ├── document.go
+│   │   │   ├── hacker_news.go
+│   │   │   └── message.go
+│   │   ├── services/             # Business logic services
+│   │   │   ├── chatbot_service.go
+│   │   │   ├── search_service.go
+│   │   │   └── indexing_service.go
+│   │   └── repositories/         # Data access layer
+│   │       ├── elasticsearch_repo.go
+│   │       └── hacker_news_repo.go
+│   ├── infrastructure/           # External service integrations
+│   │   ├── elasticsearch/        # Elasticsearch client and operations
+│   │   │   ├── client.go
+│   │   │   ├── index.go
+│   │   │   └── search.go
+│   │   ├── llm/                  # LLM integration
+│   │   │   ├── client.go
+│   │   │   ├── models.go
+│   │   │   └── prompts.go
+│   │   └── temporal/             # Temporal workflow orchestration
+│   │       ├── workflows.go
+│   │       ├── activities.go
+│   │       └── client.go
+│   ├── api/                      # HTTP API layer (if needed)
+│   │   ├── handlers/             # HTTP request handlers
+│   │   ├── middleware/           # HTTP middleware
+│   │   └── routes/               # Route definitions
+│   └── utils/                    # Shared utilities
+│       ├── logger/               # Logging utilities
+│       ├── errors/               # Error handling
+│       └── validation/           # Input validation
+├── pkg/                          # Public libraries (if any)
+│   └── public/                   # Reusable packages
+├── scripts/                      # Build and deployment scripts
+│   ├── build.sh
+│   ├── deploy.sh
+│   └── migrate.sh
+├── deployments/                  # Deployment configurations
+│   ├── docker/                   # Docker configurations
+│   │   ├── Dockerfile
+│   │   └── docker-compose.yml
+│   ├── kubernetes/               # K8s manifests
+│   └── terraform/                # Infrastructure as code
+├── docs/                         # Documentation
+│   ├── api/                      # API documentation
+│   ├── architecture/             # Architecture diagrams
+│   └── guides/                   # User guides
+├── test/                         # Integration tests
+│   ├── fixtures/                 # Test data
+│   └── integration/              # Integration test suites
+├── .env.example                  # Environment variables template
+├── .gitignore
+├── Dockerfile
+├── docker-compose.yml
+├── go.mod
+├── go.sum
+├── Makefile                      # Build automation
+├── README.md
+└── CHANGELOG.md
+```
+
+Key Architectural Principles
+
+1. Domain-Driven Design (DDD)
+
+```
+internal/domain/
+├── models/          # Core business entities
+├── services/        # Business logic
+└── repositories/    # Data access abstraction
+```
+
+2. Clean Architecture Layers
+   Domain Layer: Pure business logic
+   Infrastructure Layer: External integrations
+   Application Layer: Use cases and workflows
+   Interface Layer: API handlers and CLI commands
+3. Dependency Injection
+
+```go
+// Example structure
+type ChatbotService struct {
+    llmClient    LLMClient
+    searchRepo   SearchRepository
+    hnRepo       HackerNewsRepository
+}
+```
+
+4. Configuration Management
+
+```go
+// internal/config/config.go
+type Config struct {
+    Temporal   TemporalConfig
+    Elasticsearch ElasticsearchConfig
+    LLM        LLMConfig
+    Server     ServerConfig
+}
+```
+
+5. Error Handling Strategy
+
+```go
+// internal/utils/errors/errors.go
+type AppError struct {
+    Code    string
+    Message string
+    Err     error
+}
+```
+
+Specific Recommendations for Your Project
+
+1. Reorganize Current Structure
+   Move internal/chatbot/ logic to internal/domain/services/
+   Move internal/elasticsearch/ to internal/infrastructure/elasticsearch/
+   Move internal/llm/ to internal/infrastructure/llm/
+   Move internal/temporal/ to internal/infrastructure/temporal/
+2. Add Missing Components
+   Repository Pattern: Abstract data access behind interfaces
+   Service Layer: Centralize business logic
+   Error Handling: Consistent error types and handling
+   Logging: Structured logging with levels
+   Testing: Unit and integration test structure
+3. Configuration Improvements
+   Environment-specific configs (dev, staging, prod)
+   Validation of required environment variables
+   Secrets management integration
+4. API Layer (Optional)
+   RESTful API endpoints for your workflows
+   OpenAPI/Swagger documentation
+   Rate limiting and authentication
+5. Monitoring and Observability
+   Health check endpoints
+   Metrics collection (Prometheus)
+   Distributed tracing
+   Structured logging
+   This architecture provides:
+   Scalability: Easy to add new features and services
+   Maintainability: Clear separation of concerns
+   Testability: Dependency injection and interfaces
+   Deployability: Clear deployment configurations
+   Observability: Built-in monitoring and logging

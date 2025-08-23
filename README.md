@@ -1,15 +1,5 @@
 # temporallm
 
-## projecr ideas
-
-| application                   | data source                                                        | is RAG | hash knowledge base | can measure performance |
-| ----------------------------- | ------------------------------------------------------------------ | ------ | ------------------- | ----------------------- |
-| hectora chatbot               | https://docs.hectora.cloud/                                        |
-|                               | https://github.com/HackerNews/API                                  |
-| system design interviwer      | Acing the System Design Interview book                             |
-| datatalks club project grader | https://github.com/DataTalksClub/llm-zoomcamp/blob/main/project.md |
-| simple notebooklm             | -                                                                  |
-
 ## commands
 
 1. elasticsearch in docker
@@ -29,4 +19,47 @@ docker run -it \
 
 ```bash
 temporal server start-dev
+```
+
+3. es queries
+
+- get all sotries
+
+```json
+GET /hacker_news/_search/
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {"term": {
+          "type": "story"
+        }}
+      ]
+    }
+  }
+}
+```
+
+- get all comments of a history
+
+```json
+GET /hacker_news/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match_phrase": {
+            "title": "Container technologies at Coinbase: Why Kubernetes is not part of our stack"
+          }
+        }
+      ],
+      "filter": [
+        {"term": {
+          "type": "comment"
+        }}
+      ]
+    }
+  }
+}
 ```

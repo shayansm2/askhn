@@ -1,4 +1,4 @@
-package chatbot
+package llm
 
 import (
 	"fmt"
@@ -7,7 +7,9 @@ import (
 	"github.com/shayansm2/temporallm/internal/elasticsearch"
 )
 
-func BuildSystemPrompt(searchResults []elasticsearch.ESDocument) string {
+type SystemPromptBuilder struct{}
+
+func (b SystemPromptBuilder) ForRAG(searchResults []elasticsearch.ESDocument) string {
 	const promptTemplate = `You're a course teaching assistant. Answer the questions based on the CONTEXT from the hacker news comments.
 	Use only the facts from the CONTEXT when answering the questions.
 
@@ -22,4 +24,8 @@ func BuildSystemPrompt(searchResults []elasticsearch.ESDocument) string {
 	context := strings.TrimSpace(contextBuilder.String())
 	prompt := fmt.Sprintf(promptTemplate, context)
 	return strings.TrimSpace(prompt)
+}
+
+func (b SystemPromptBuilder) ForGrandTruth(path string) string {
+	return ""
 }

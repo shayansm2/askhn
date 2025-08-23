@@ -38,5 +38,13 @@ type SearchRequest struct {
 }
 
 func (i *ElasticsearchActivities) Search(ctx context.Context, req *SearchRequest) ([]elasticsearch.ESDocument, error) {
-	return elasticsearch.SearchDocuments(req.Query, req.Size)
+	return elasticsearch.TextSearch(req.Query, req.Size)
+}
+
+func (i *ElasticsearchActivities) GetAllStories(ctx context.Context) ([]string, error) {
+	return elasticsearch.GetAllStories()
+}
+
+func (i *ElasticsearchActivities) GetAllCommentsOfStory(ctx context.Context, title string) ([]string, error) {
+	return elasticsearch.GetAllComments(title)
 }

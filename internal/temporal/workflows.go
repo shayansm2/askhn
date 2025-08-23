@@ -6,6 +6,7 @@ import (
 
 	"github.com/shayansm2/temporallm/internal/chatbot"
 	"github.com/shayansm2/temporallm/internal/elasticsearch"
+	"github.com/shayansm2/temporallm/internal/llm"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -75,10 +76,32 @@ func RetrivalAugmentedGenerationWorkflow(ctx workflow.Context, message string) (
 
 	var llmActivities *LLMActivities
 	var response string
-	systemMsg := chatbot.BuildSystemPrompt(esDocs)
+	systemMsg := llm.SystemPromptBuilder{}.ForRAG(esDocs)
 	err = workflow.ExecuteActivity(ctx, llmActivities.Chat, message, systemMsg).Get(ctx, &response)
 	if err != nil {
 		return "", fmt.Errorf("failed to get response from llm: %s", err)
 	}
 	return response, nil
+}
+
+func CreateGrandTruthDataWorkflow(ctx workflow.Context, path string) error {
+	ao := workflow.ActivityOptions{
+		StartToCloseTimeout: time.Minute,
+	}
+	ctx = workflow.WithActivityOptions(ctx, ao)
+	var esActivities *ElasticsearchActivities
+	var stories []string
+	err := workflow.ExecuteActivity(ctx, esActivities.GetAllStories).Get(ctx, &stories)
+	if err != nil {
+		return fmt.Errorf("failed to get all stories: %s", err)
+	}
+	for _, story := range stories {
+		var comments []string
+		err := workflow.ExecuteActivity(ctx, esActivities.GetAllCommentsOfStory, story).Get(ctx, &comments)
+		if err != nil {
+			return fmt.Errorf("failed to get all comments of story %s: %s", story, err)
+		}
+		fmt.Println(story, comments)
+	}
+	return nil
 }

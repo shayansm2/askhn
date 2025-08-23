@@ -3,60 +3,13 @@ package elasticsearch
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"log"
 	"strconv"
-	"sync"
 
-	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/textquerytype"
 	"github.com/shayansm2/temporallm/internal/config"
 )
-
-var once sync.Once
-var client *elasticsearch.TypedClient
-
-func GetClient() *elasticsearch.TypedClient {
-	log.Println("Getting client", config.Load().ElasticsearchURL)
-	once.Do(func() {
-		var err error
-		client, err = elasticsearch.NewTypedClient(elasticsearch.Config{
-			Addresses: []string{config.Load().ElasticsearchURL},
-			Username:  config.Load().ElasticsearchUser,
-			Password:  config.Load().ElasticsearchPass,
-		})
-		if err != nil {
-			log.Fatalf("Error creating the client: %s", err)
-		}
-	})
-	return client
-}
-
-var ESIndexSchema = &types.TypeMapping{
-	Properties: map[string]types.Property{
-		"id":    types.IntegerNumberProperty{},
-		"score": types.IntegerNumberProperty{},
-		"title": types.TextProperty{},
-		"text":  types.TextProperty{},
-		"type":  types.KeywordProperty{},
-	},
-}
-
-func CreateElasticsearchIndex() error {
-	client := GetClient()
-	req := client.Indices.Create(config.Load().ElasticsearchIndexName)
-	req.Mappings(ESIndexSchema)
-	res, err := req.Do(context.Background())
-	if err != nil {
-		return fmt.Errorf("failed to create index: %w", err)
-	}
-	if !res.Acknowledged {
-		return fmt.Errorf("index creation not acknowledged")
-	}
-	return nil
-}
 
 type ESDocument struct {
 	Id    int    `json:"id"`
@@ -75,7 +28,7 @@ func IndexDocument(document ESDocument) error {
 	return err
 }
 
-func SearchDocuments(query string, size int) ([]ESDocument, error) {
+func TextSearch(query string, size int) ([]ESDocument, error) {
 	req := search.Request{
 		Size: &size,
 		Query: &types.Query{
@@ -107,3 +60,84 @@ func SearchDocuments(query string, size int) ([]ESDocument, error) {
 	}
 	return result, nil
 }
+
+func GetAllStories() ([]string, error) {
+	req := search.Request{
+		Query: &types.Query{
+			Bool: &types.BoolQuery{
+				Filter: []types.Query{
+					{
+						Term: map[string]types.TermQuery{
+							"type": {
+								Value: "story",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	var result []string
+	res, err := GetClient().Search().Index("hacker_news").Request(&req).Do(context.TODO())
+	if err != nil {
+		return result, err
+	}
+	for _, hit := range res.Hits.Hits {
+		var doc ESDocument
+		if err := json.Unmarshal(hit.Source_, &doc); err != nil {
+			return result, err
+		}
+		result = append(result, doc.Title)
+	}
+	return result, nil
+}
+
+func GetAllComments(title string) ([]string, error) {
+	req := search.Request{
+		Query: &types.Query{
+			Bool: &types.BoolQuery{
+				Must: []types.Query{{
+					MatchPhrase: map[string]types.MatchPhraseQuery{
+						"title": {
+							Query: title,
+						},
+					},
+				}},
+				Filter: []types.Query{{
+					Term: map[string]types.TermQuery{
+						"type": {
+							Value: "comment",
+						},
+					},
+				}},
+			},
+		},
+	}
+
+	var result []string
+	res, err := GetClient().Search().Index("hacker_news").Request(&req).Do(context.TODO())
+	if err != nil {
+		return result, err
+	}
+	for _, hit := range res.Hits.Hits {
+		var doc ESDocument
+		if err := json.Unmarshal(hit.Source_, &doc); err != nil {
+			return result, err
+		}
+		result = append(result, doc.Title)
+	}
+	return result, nil
+}
+
+// func getFieldsFromResult(res *search.Response, field string) ([]string, error) {
+// 	var result []string
+// 	for _, hit := range res.Hits.Hits {
+// 		var doc ESDocument
+// 		if err := json.Unmarshal(hit.Source_, &doc); err != nil {
+// 			return result, err
+// 		}
+// 		result = append(result, doc.Title)
+// 	}
+// 	return result, nil
+// }
