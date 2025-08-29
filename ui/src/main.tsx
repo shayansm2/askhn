@@ -1,9 +1,11 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App.tsx";
+// import ChatbotV1 from "./ChatbotV1";
+import ProsConsV1 from "./ProsConsV1";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
+    <ProsConsV1 />
+    {/* <ChatbotV1 /> */}
   </StrictMode>
 );

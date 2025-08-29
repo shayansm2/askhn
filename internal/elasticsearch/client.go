@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/shayansm2/temporallm/internal/config"
+	"github.com/shayansm2/askhn/internal/config"
 )
 
 var once sync.Once

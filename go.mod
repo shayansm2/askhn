@@ -1,4 +1,4 @@
-module github.com/shayansm2/temporallm
+module github.com/shayansm2/askhn
 
 go 1.24.2
 

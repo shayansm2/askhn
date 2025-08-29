@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 
-	"github.com/shayansm2/temporallm/internal/config"
-	"github.com/shayansm2/temporallm/internal/llm"
-	"github.com/shayansm2/temporallm/internal/temporal"
+	"github.com/shayansm2/askhn/internal/config"
+	"github.com/shayansm2/askhn/internal/llm"
+	"github.com/shayansm2/askhn/internal/temporal"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 )
@@ -26,6 +26,9 @@ func main() {
 	w.RegisterActivity(&temporal.LLMActivities{LLM: &llm})
 	w.RegisterActivity(&temporal.HackerNewsApiActivities{})
 	w.RegisterActivity(&temporal.ElasticsearchActivities{})
+
+	w.RegisterWorkflow(temporal.DummyWorkflow)
+	w.RegisterActivity(&temporal.DummyActivities{})
 
 	// Start the Worker
 	err = w.Run(worker.InterruptCh())

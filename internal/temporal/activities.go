@@ -3,9 +3,9 @@ package temporal
 import (
 	"context"
 
-	"github.com/shayansm2/temporallm/internal/chatbot"
-	"github.com/shayansm2/temporallm/internal/elasticsearch"
-	"github.com/shayansm2/temporallm/internal/llm"
+	"github.com/shayansm2/askhn/internal/chatbot"
+	"github.com/shayansm2/askhn/internal/elasticsearch"
+	"github.com/shayansm2/askhn/internal/llm"
 )
 
 type LLMActivities struct {

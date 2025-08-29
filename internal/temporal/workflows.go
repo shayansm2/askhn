@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/shayansm2/temporallm/internal/chatbot"
-	"github.com/shayansm2/temporallm/internal/elasticsearch"
-	"github.com/shayansm2/temporallm/internal/llm"
+	"github.com/shayansm2/askhn/internal/chatbot"
+	"github.com/shayansm2/askhn/internal/elasticsearch"
+	"github.com/shayansm2/askhn/internal/llm"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -63,6 +63,13 @@ func IndexHackerNewsStoryWorkflow(ctx workflow.Context, id int) error {
 }
 
 func RetrivalAugmentedGenerationWorkflow(ctx workflow.Context, message string) (string, error) {
+	var step int
+	workflow.SetQueryHandler(ctx, "steps", func() (map[string]interface{}, error) {
+		return map[string]interface{}{
+			"step":  step,
+			"steps": []string{"kb_search", "llm"},
+		}, nil
+	})
 	ao := workflow.ActivityOptions{
 		StartToCloseTimeout: time.Minute,
 	}
@@ -73,7 +80,7 @@ func RetrivalAugmentedGenerationWorkflow(ctx workflow.Context, message string) (
 	if err != nil {
 		return "", fmt.Errorf("failed to search on elasticsearch: %s", err)
 	}
-
+	step++
 	var llmActivities *LLMActivities
 	var response string
 	systemMsg := llm.SystemPromptBuilder{}.ForRAG(esDocs)
@@ -81,6 +88,7 @@ func RetrivalAugmentedGenerationWorkflow(ctx workflow.Context, message string) (
 	if err != nil {
 		return "", fmt.Errorf("failed to get response from llm: %s", err)
 	}
+	step++
 	return response, nil
 }
 

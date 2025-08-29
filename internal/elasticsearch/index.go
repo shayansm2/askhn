@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
-	"github.com/shayansm2/temporallm/internal/config"
+	"github.com/shayansm2/askhn/internal/config"
 )
 
 var ESIndexSchema = &types.TypeMapping{

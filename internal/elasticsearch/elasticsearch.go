@@ -8,7 +8,7 @@ import (
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/textquerytype"
-	"github.com/shayansm2/temporallm/internal/config"
+	"github.com/shayansm2/askhn/internal/config"
 )
 
 type ESDocument struct {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/shayansm2/temporallm/internal/elasticsearch"
+	"github.com/shayansm2/askhn/internal/elasticsearch"
 )
 
 type SystemPromptBuilder struct{}

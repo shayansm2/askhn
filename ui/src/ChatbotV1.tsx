@@ -1,25 +1,33 @@
-import { UserOutlined } from "@ant-design/icons";
 import { Bubble, Sender, useXAgent, useXChat } from "@ant-design/x";
 import { Flex, type GetProp } from "antd";
 import React from "react";
 import ReactMarkdown from "react-markdown";
+import { UserPlus, UserMinus, User } from "lucide-react";
 
 const roles: GetProp<typeof Bubble.List, "roles"> = {
-  ai: {
+  user: {
+    placement: "end",
+    avatar: { icon: <User />, style: { background: "blue" } },
+  },
+  agree: {
     placement: "start",
-    avatar: { icon: <UserOutlined />, style: { background: "#fde3cf" } },
+    avatar: { icon: <UserPlus />, style: { background: "green" } },
     typing: { step: 5, interval: 20 },
     style: {
       maxWidth: 600,
     },
   },
-  local: {
-    placement: "end",
-    avatar: { icon: <UserOutlined />, style: { background: "#87d068" } },
+  disagree: {
+    placement: "start",
+    avatar: { icon: <UserMinus />, style: { background: "red" } },
+    typing: { step: 5, interval: 20 },
+    style: {
+      maxWidth: 600,
+    },
   },
 };
 
-const App = () => {
+const ChatbotV1 = () => {
   const [content, setContent] = React.useState("");
 
   // Agent for request
@@ -60,7 +68,7 @@ const App = () => {
 
   // Chat messages
   const { onRequest, messages } = useXChat({
-    agent: agent,
+    agent: ollamaAgent,
     requestPlaceholder: "Waiting...",
     requestFallback: "Mock failed return. Please try again later.",
   });
@@ -69,16 +77,15 @@ const App = () => {
     <Flex vertical gap="middle">
       <Bubble.List
         roles={roles}
-        style={{ maxHeight: 300 }}
         items={messages.map(({ id, message, status }) => ({
           key: id,
           loading: status === "loading",
-          role: status === "local" ? "local" : "ai",
+          role: status === "local" ? "user" : "agree",
           content: <ReactMarkdown>{message}</ReactMarkdown>,
         }))}
       />
       <Sender
-        loading={agent.isRequesting()}
+        loading={ollamaAgent.isRequesting()}
         value={content}
         onChange={setContent}
         onSubmit={(nextContent) => {
@@ -90,4 +97,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default ChatbotV1;
