@@ -2,6 +2,7 @@ package temporal
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/shayansm2/askhn/internal/chatbot"
@@ -85,6 +86,51 @@ func RetrivalAugmentedGenerationWorkflow(ctx workflow.Context, message string) (
 	var response string
 	systemMsg := llm.SystemPromptBuilder{}.ForRAG(esDocs)
 	err = workflow.ExecuteActivity(ctx, llmActivities.Chat, message, systemMsg).Get(ctx, &response)
+	if err != nil {
+		return "", fmt.Errorf("failed to get response from llm: %s", err)
+	}
+	step++
+	return response, nil
+}
+
+type ProsConsRagParams struct {
+	Message string
+	Side    string
+}
+
+func ProsConsRagWorkflow(ctx workflow.Context, params ProsConsRagParams) (string, error) {
+	var step int
+	workflow.SetQueryHandler(ctx, "steps", func() (map[string]interface{}, error) {
+		return map[string]interface{}{
+			"step":  step,
+			"steps": []string{"searching_kowledge_base", "generating_response_from_llm"},
+		}, nil
+	})
+	ao := workflow.ActivityOptions{
+		StartToCloseTimeout: time.Minute,
+	}
+	ctx = workflow.WithActivityOptions(ctx, ao)
+	var esActivities *ElasticsearchActivities
+	var esDocs []elasticsearch.ESDocument
+	err := workflow.ExecuteActivity(ctx, esActivities.Search, &SearchRequest{Query: params.Message, Size: 10}).Get(ctx, &esDocs)
+	if err != nil {
+		return "", fmt.Errorf("failed to search on elasticsearch: %s", err)
+	}
+	step++
+	var contextBuilder strings.Builder
+	for _, doc := range esDocs {
+		contextBuilder.WriteString(fmt.Sprintf("title: %s\ncomment: %s\n\n", doc.Title, doc.Text))
+	}
+	context := strings.TrimSpace(contextBuilder.String())
+	var llmActivities *LLMActivities
+	var response string
+	systemMsg, err := llm.GenerateSysPrompt(params.Side, map[string]string{
+		"Context": context,
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to generate system prompt: %s", err)
+	}
+	err = workflow.ExecuteActivity(ctx, llmActivities.Chat, params.Message, systemMsg).Get(ctx, &response)
 	if err != nil {
 		return "", fmt.Errorf("failed to get response from llm: %s", err)
 	}

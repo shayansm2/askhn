@@ -6,11 +6,12 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/shayansm2/askhn/internal/api"
+	"github.com/shayansm2/askhn/internal/temporal"
 )
 
 func main() {
-	handler := api.NewHandler()
-	defer handler.CloseTemporalConnection()
+	temporalClient := temporal.GetClient()
+	defer temporalClient.Close()
 	engine := gin.Default()
 	engine.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173"},
@@ -20,9 +21,8 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
-	engine.GET("v1/chat", handler.ChatV1)
-	engine.POST("v2/chat/", handler.CreateChatV2)
-	engine.GET("v2/chat/:wfid", handler.GetChatV2)
-	// engine.GET("v1/chat/response", handler.ChatResponseV1)
+	engine.GET("v1/chat", api.HandlerFunc(api.ChatV1).Handle)
+	engine.POST("v2/chat/", api.HandlerFunc(api.CreateChatV2).Handle)
+	engine.GET("v2/chat/:wfid", api.HandlerFunc(api.GetChatV2).Handle)
 	engine.Run(":8080")
 }

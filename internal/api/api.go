@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -16,47 +15,27 @@ import (
 // err handler for 400 500s
 // handler for converting exceptions to json errors and structs to json response
 
-type Handler struct {
-	temporalClient client.Client
-}
-
-func NewHandler() *Handler {
-	c, err := client.Dial(client.Options{})
-	if err != nil {
-		log.Fatalln("Unable to create client", err)
-	}
-	return &Handler{temporalClient: c}
-}
-
-func (h *Handler) CloseTemporalConnection() {
-	h.temporalClient.Close()
-}
-
-func (h *Handler) ChatV1(c *gin.Context) {
+func ChatV1(c *gin.Context) *ApiError {
 	message := c.Query("message")
 	if message == "" {
-		c.JSON(400, gin.H{"error": "message is required"})
-		return
+		return BadRequestError("message is required")
 	}
 	wfid := "v1-chat-" + uuid.New().String()
 	options := client.StartWorkflowOptions{
 		ID:        wfid,
 		TaskQueue: config.Load().TaskQueueName,
 	}
-	wf, err := h.temporalClient.ExecuteWorkflow(context.Background(), options, temporal.RetrivalAugmentedGenerationWorkflow, message)
+	temporalClient := temporal.GetClient()
+	wf, err := temporalClient.ExecuteWorkflow(context.Background(), options, temporal.RetrivalAugmentedGenerationWorkflow, message)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to execute workflow"})
-		log.Println("failed to execute workflow", err)
-		return
+		return ServerError("failed to execute workflow: " + err.Error())
 	}
 	var result string
-	err = wf.Get(context.Background(), &result)
-	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to get workflow result"})
-		log.Println("failed to get workflow result", err)
-		return
+	if err = wf.Get(context.Background(), &result); err != nil {
+		return ServerError("failed to get workflow result: " + err.Error())
 	}
 	c.JSON(200, gin.H{"wfid": wfid, "result": result})
+	return nil
 }
 
 type CreateChatV2Request struct {
@@ -64,75 +43,71 @@ type CreateChatV2Request struct {
 	Side    string `json:"side"`
 }
 
-func (h *Handler) CreateChatV2(c *gin.Context) {
+func CreateChatV2(c *gin.Context) *ApiError {
 	var req CreateChatV2Request
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": "bad request"})
-		return
+		return BadRequestError("bad request: " + err.Error())
 	}
 	if req.Side != "agree" && req.Side != "disagree" {
-		c.JSON(400, gin.H{"error": "side must be agree or disagree"})
-		return
+		return BadRequestError("side must be agree or disagree")
 	}
 	wfid := "v2-chat-" + req.Side + "-" + uuid.New().String()
-	options := client.StartWorkflowOptions{
-		ID:        wfid,
-		TaskQueue: config.Load().TaskQueueName,
-	}
-	_, err := h.temporalClient.ExecuteWorkflow(context.Background(), options, temporal.RetrivalAugmentedGenerationWorkflow, req.Message)
+	temporalClient := temporal.GetClient()
+	_, err := temporalClient.ExecuteWorkflow(
+		context.Background(),
+		client.StartWorkflowOptions{
+			ID:        wfid,
+			TaskQueue: config.Load().TaskQueueName,
+		},
+		temporal.ProsConsRagWorkflow,
+		temporal.ProsConsRagParams{
+			Message: req.Message,
+			Side:    req.Side,
+		},
+	)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to execute workflow"})
-		log.Println("failed to execute workflow", err)
-		return
+		return ServerError("failed to execute workflow: " + err.Error())
 	}
 	c.JSON(200, gin.H{"wfid": wfid})
+	return nil
 }
 
 type GetChatV2Response struct {
 	Result string `json:"result"`
 }
 
-func (h *Handler) GetChatV2(c *gin.Context) {
+func GetChatV2(c *gin.Context) *ApiError {
 	wfid := c.Param("wfid")
 	if wfid == "" {
-		c.JSON(400, gin.H{"error": "wfid is required"})
-		return
+		return BadRequestError("wfid is required")
 	}
-	desc, err := h.temporalClient.DescribeWorkflowExecution(context.Background(), wfid, "")
+	temporalClient := temporal.GetClient()
+	desc, err := temporalClient.DescribeWorkflowExecution(context.Background(), wfid, "")
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to describe workflow"})
-		log.Println("failed to describe workflow", err)
-		return
+		return ServerError("failed to describe workflow: " + err.Error())
 	}
 	switch desc.WorkflowExecutionInfo.Status {
 	case enums.WORKFLOW_EXECUTION_STATUS_COMPLETED:
 		var result string
-		wf := h.temporalClient.GetWorkflow(context.Background(), wfid, "")
+		wf := temporalClient.GetWorkflow(context.Background(), wfid, "")
 		err := wf.Get(context.Background(), &result)
 		if err != nil {
-			c.JSON(500, gin.H{"error": "failed to get workflow result"})
-			log.Println("failed to get workflow result", err)
-			return
+			return ServerError("failed to get workflow result: " + err.Error())
 		}
-		c.JSON(200, gin.H{"status": desc.WorkflowExecutionInfo.Status, "result": result})
+		c.JSON(200, gin.H{"status": desc.WorkflowExecutionInfo.Status.String(), "result": result})
 	case enums.WORKFLOW_EXECUTION_STATUS_RUNNING:
-		query, err := h.temporalClient.QueryWorkflow(context.Background(), wfid, "", "steps")
+		query, err := temporalClient.QueryWorkflow(context.Background(), wfid, "", "steps")
 		if err != nil {
-			c.JSON(500, gin.H{"error": "failed to query workflow"})
-			log.Println("failed to query workflow", err)
-			return
+			return ServerError("failed to query workflow: " + err.Error())
 		}
 		var steps map[string]interface{}
 		err = query.Get(&steps)
 		if err != nil {
-			c.JSON(500, gin.H{"error": "failed to get query result"})
-			log.Println("failed to get query result", err)
-			return
+			return ServerError("failed to get query result: " + err.Error())
 		}
-		c.JSON(200, gin.H{"status": desc.WorkflowExecutionInfo.Status, "steps": steps})
+		c.JSON(200, gin.H{"status": desc.WorkflowExecutionInfo.Status.String(), "steps": steps})
 	default:
-		c.JSON(500, gin.H{"error": "failed to get workflow"})
-		log.Println("failed to get workflow", err)
-		return
+		return ServerError("workflow is in unexpected state: " + desc.WorkflowExecutionInfo.Status.String())
 	}
+	return nil
 }
