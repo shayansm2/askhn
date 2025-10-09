@@ -9,7 +9,7 @@ import (
 )
 
 type LLMActivities struct {
-	LLM *llm.LargeLanguageModel
+	LLM llm.LLM
 }
 
 func (i *LLMActivities) SimpleChat(ctx context.Context, message string) (string, error) {

@@ -11,6 +11,8 @@ type Config struct {
 	TaskQueueName          string
 	OllamaBaseURL          string
 	OllamaModel            string
+	GeminiApiKey           string
+	GeminiModel            string
 	ElasticsearchURL       string
 	ElasticsearchUser      string
 	ElasticsearchPass      string
@@ -27,9 +29,14 @@ func Load() *Config {
 		_ = godotenv.Overload()
 
 		cfg = &Config{
-			TaskQueueName:          getEnv("TEMPORALTASK_QUEUE_NAME", "default"),
-			OllamaBaseURL:          getEnv("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
-			OllamaModel:            getEnv("OLLAMA_MODEL", "gemma3:latest"),
+			// temporal configs
+			TaskQueueName: getEnv("TEMPORALTASK_QUEUE_NAME", "default"),
+			// LLM configs
+			OllamaBaseURL: getEnv("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
+			OllamaModel:   getEnv("OLLAMA_MODEL", "gemma3:latest"),
+			GeminiApiKey:  getEnv("GEMINI_API_KEY", ""),
+			GeminiModel:   getEnv("GEMINI_MODEL", "gemini-2.5-flash"),
+			// knowledge base configs
 			ElasticsearchURL:       getEnv("ELASTICSEARCH_URL", "http://localhost:9200"),
 			ElasticsearchUser:      getEnv("ELASTICSEARCH_USER", "user"),
 			ElasticsearchPass:      getEnv("ELASTICSEARCH_PASS", "pass"),
