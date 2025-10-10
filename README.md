@@ -15,10 +15,13 @@ docker run -it \
     elasticsearch:8.4.3
 ```
 
-2. run temporal (dev)
+2. run temporal (dev) and other services
 
 ```bash
 temporal server start-dev
+yarn dev
+go run cmd/api/main.go
+go run cmd/worker/main.go
 ```
 
 3. es queries

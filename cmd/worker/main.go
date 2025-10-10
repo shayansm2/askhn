@@ -13,8 +13,8 @@ func main() {
 	c := temporal.GetClient()
 
 	w := worker.New(c, config.Load().TaskQueueName, worker.Options{})
-	// llm := llm.NewOllamaLLM(config.Load().OllamaBaseURL, config.Load().OllamaModel)
-	llm := llm.NewGeminiLLM(config.Load().GeminiApiKey, config.Load().GeminiModel)
+	llm := llm.NewOllamaLLM(config.Load().OllamaBaseURL, config.Load().OllamaModel)
+	// llm := llm.NewGeminiLLM(config.Load().GeminiApiKey, config.Load().GeminiModel)
 
 	w.RegisterWorkflow(temporal.SimpleChatWorkflow)
 	w.RegisterWorkflow(temporal.IndexHackerNewsStoryWorkflow)

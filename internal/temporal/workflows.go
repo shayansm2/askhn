@@ -84,7 +84,15 @@ func RetrivalAugmentedGenerationWorkflow(ctx workflow.Context, message string) (
 	step++
 	var llmActivities *LLMActivities
 	var response string
-	systemMsg := llm.SystemPromptBuilder{}.ForRAG(esDocs)
+	var contextBuilder strings.Builder
+	for _, doc := range esDocs {
+		contextBuilder.WriteString(fmt.Sprintf("title: %s\ncomment: %s\n\n", doc.Title, doc.Text))
+	}
+	context := strings.TrimSpace(contextBuilder.String())
+	systemMsg, err := llm.GenerateSysPrompt("assist", map[string]string{"Context": context})
+	if err != nil {
+		return "", fmt.Errorf("failed to generate system prompt: %s", err)
+	}
 	err = workflow.ExecuteActivity(ctx, llmActivities.Chat, message, systemMsg).Get(ctx, &response)
 	if err != nil {
 		return "", fmt.Errorf("failed to get response from llm: %s", err)
