@@ -9,19 +9,36 @@ import (
 	"go.temporal.io/sdk/worker"
 )
 
+func getLLM(cnf *config.Config) llm.LLM {
+	switch cnf.LLM {
+	case "openai":
+		llm := llm.NewOpenAiLLM(cnf.OpenAIApiKey, cnf.LLMModel)
+		return &llm
+	case "gemini":
+		llm := llm.NewGeminiLLM(cnf.GeminiApiKey, cnf.LLMModel)
+		return &llm
+	case "ollama":
+		llm := llm.NewOllamaLLM(cnf.OllamaBaseURL, cnf.LLMModel)
+		return &llm
+	default:
+		panic("LLM env variable should be one of openai, gemini or ollama")
+	}
+}
+
 func main() {
+	cnf := config.Load()
 	c := temporal.GetClient()
 
-	w := worker.New(c, config.Load().TaskQueueName, worker.Options{})
-	llm := llm.NewOllamaLLM(config.Load().OllamaBaseURL, config.Load().OllamaModel)
-	// llm := llm.NewGeminiLLM(config.Load().GeminiApiKey, config.Load().GeminiModel)
+	w := worker.New(c, cnf.TaskQueueName, worker.Options{})
+	llm := getLLM(cnf)
 
 	w.RegisterWorkflow(temporal.SimpleChatWorkflow)
 	w.RegisterWorkflow(temporal.IndexHackerNewsStoryWorkflow)
 	w.RegisterWorkflow(temporal.RetrivalAugmentedGenerationWorkflow)
 	w.RegisterWorkflow(temporal.ProsConsRagWorkflow)
+	w.RegisterWorkflow(temporal.AgenticRAGWorkflow)
 
-	w.RegisterActivity(&temporal.LLMActivities{LLM: &llm})
+	w.RegisterActivity(&temporal.LLMActivities{LLM: llm})
 	w.RegisterActivity(&temporal.HackerNewsApiActivities{})
 	w.RegisterActivity(&temporal.ElasticsearchActivities{})
 

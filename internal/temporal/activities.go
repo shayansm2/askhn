@@ -3,8 +3,8 @@ package temporal
 import (
 	"context"
 
-	"github.com/shayansm2/askhn/internal/chatbot"
 	"github.com/shayansm2/askhn/internal/elasticsearch"
+	"github.com/shayansm2/askhn/internal/hackernews"
 	"github.com/shayansm2/askhn/internal/llm"
 )
 
@@ -20,10 +20,20 @@ func (i *LLMActivities) Chat(ctx context.Context, userMsg, systemMsg string) (st
 	return i.LLM.Chat(llm.Message{User: userMsg, System: systemMsg})
 }
 
+func (i *LLMActivities) AgenticChat(ctx context.Context, userMsg, systemMsg string) (llm.AgentResponse, error) {
+	var response llm.AgentResponse
+	err := llm.ChatWithSchema(i.LLM, llm.Message{User: userMsg, System: systemMsg}, &response)
+	return response, err
+}
+
 type HackerNewsApiActivities struct{}
 
-func (i *HackerNewsApiActivities) RetrieveHackerNewsItem(ctx context.Context, id int) (*chatbot.HackerNewsResponse, error) {
-	return chatbot.HackerNewsItem(id)
+func (i *HackerNewsApiActivities) RetrieveHackerNewsItem(ctx context.Context, id int) (*hackernews.Item, error) {
+	return hackernews.GetItem(id)
+}
+
+func (i *HackerNewsApiActivities) SearchHackerNews(ctx context.Context, query string) ([]int, error) {
+	return hackernews.Search(query)
 }
 
 type ElasticsearchActivities struct{}

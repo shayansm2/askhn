@@ -5,9 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/shayansm2/askhn/internal/chatbot"
 	"github.com/shayansm2/askhn/internal/elasticsearch"
+	"github.com/shayansm2/askhn/internal/hackernews"
 	"github.com/shayansm2/askhn/internal/llm"
+	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -39,7 +40,7 @@ func IndexHackerNewsStoryWorkflow(ctx workflow.Context, id int) error {
 	for len(items) > 0 {
 		item := items[0]
 		items = items[1:]
-		var hnResponse *chatbot.HackerNewsResponse
+		var hnResponse *hackernews.Item
 		err := workflow.ExecuteActivity(ctx, hnActivities.RetrieveHackerNewsItem, item).Get(ctx, &hnResponse)
 		if err != nil {
 			return fmt.Errorf("failed to retrieve hacker news for item %d: %s", item, err)
@@ -166,4 +167,65 @@ func CreateGrandTruthDataWorkflow(ctx workflow.Context, path string) error {
 		fmt.Println(story, comments)
 	}
 	return nil
+}
+
+func AgenticRAGWorkflow(ctx workflow.Context, message string) (string, error) {
+	ao := workflow.ActivityOptions{StartToCloseTimeout: time.Minute}
+	cwo := workflow.ChildWorkflowOptions{ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON}
+	ctx = workflow.WithActivityOptions(ctx, ao)
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	var llmActivities *LLMActivities
+	var esActivities *ElasticsearchActivities
+	var hnActivities *HackerNewsApiActivities
+
+	context := ""
+	for range 5 {
+		systemMsg, err := llm.GenerateSysPrompt("agentic", map[string]string{"Context": context})
+		if err != nil {
+			return "", fmt.Errorf("failed to generate system prompt: %s", err)
+		}
+
+		var agentResponse llm.AgentResponse
+		err = workflow.ExecuteActivity(ctx, llmActivities.AgenticChat, message, systemMsg).Get(ctx, &agentResponse)
+		if err != nil {
+			return "", fmt.Errorf("no or wrong response from llm: %s", err)
+		}
+
+		if agentResponse.Action == llm.ActionAnswer {
+			return agentResponse.Message, nil
+		}
+
+		if agentResponse.Action == llm.ActionExplore {
+			hnItemIDs := make([]int, 0)
+			err = workflow.ExecuteActivity(ctx, hnActivities.SearchHackerNews, agentResponse.Message).Get(ctx, &hnItemIDs)
+			childWfs := make([]workflow.ChildWorkflowFuture, 0)
+			for _, itemId := range hnItemIDs {
+				childWfs = append(childWfs, workflow.ExecuteChildWorkflow(ctx, IndexHackerNewsStoryWorkflow, itemId))
+			}
+			for _, childWf := range childWfs {
+				if err = childWf.Get(ctx, nil); err != nil {
+					return "", err
+				}
+			}
+		}
+
+		var esDocs []elasticsearch.ESDocument
+		err = workflow.ExecuteActivity(ctx, esActivities.Search, &SearchRequest{Query: message, Size: 5}).Get(ctx, &esDocs)
+		if err != nil {
+			return "", fmt.Errorf("failed to search on elasticsearch: %s", err)
+		}
+		var contextBuilder strings.Builder
+		for _, doc := range esDocs {
+			contextBuilder.WriteString(fmt.Sprintf("title: %s\ncomment: %s\n\n", doc.Title, doc.Text))
+		}
+		context += "\n\n" + strings.TrimSpace(contextBuilder.String())
+	}
+	systemMsg, err := llm.GenerateSysPrompt("assist", map[string]string{"Context": context})
+	var response string
+	err = workflow.ExecuteActivity(ctx, llmActivities.Chat, message, systemMsg).Get(ctx, &response)
+	if err != nil {
+		return "", fmt.Errorf("failed to get response from llm: %s", err)
+	}
+	return response, nil
 }

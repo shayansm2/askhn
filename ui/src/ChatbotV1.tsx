@@ -22,32 +22,11 @@ const roles: GetProp<typeof Bubble.List, "roles"> = {
 const ChatbotV1 = () => {
   const [content, setContent] = React.useState("");
 
-  // Agent for request
-  const [ollamaAgent] = useXAgent<string, { message: string }, string>({
-    request: async ({ message }, { onSuccess, onError }) => {
-      try {
-        const response = await fetch("http://localhost:11434/api/generate", {
-          method: "POST",
-          body: JSON.stringify({
-            model: "llama3.2",
-            prompt: message,
-            stream: false,
-          }),
-        });
-        const data = await response.json();
-        onSuccess(data.response);
-      } catch (error) {
-        console.error(error);
-        onError(new Error("Mock request failed"));
-      }
-    },
-  });
-
   const [agent] = useXAgent<string, { message: string }, string>({
     request: async ({ message }, { onSuccess, onError }) => {
       try {
         const response = await fetch(
-          "http://localhost:8080/v1/chat?message=" + message,
+          "http://localhost:8080/v3/chat?message=" + message,
         );
         const data = await response.json();
         onSuccess(data.result);

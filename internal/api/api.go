@@ -111,3 +111,26 @@ func GetChatV2(c *gin.Context) *ApiError {
 	}
 	return nil
 }
+
+func AgenticChat(c *gin.Context) *ApiError {
+	message := c.Query("message")
+	if message == "" {
+		return BadRequestError("message is required")
+	}
+	wfid := "v3-chat-" + uuid.New().String()
+	options := client.StartWorkflowOptions{
+		ID:        wfid,
+		TaskQueue: config.Load().TaskQueueName,
+	}
+	temporalClient := temporal.GetClient()
+	wf, err := temporalClient.ExecuteWorkflow(context.Background(), options, temporal.AgenticRAGWorkflow, message)
+	if err != nil {
+		return ServerError("failed to execute workflow: " + err.Error())
+	}
+	var result string
+	if err = wf.Get(context.Background(), &result); err != nil {
+		return ServerError("failed to get workflow result: " + err.Error())
+	}
+	c.JSON(200, gin.H{"wfid": wfid, "result": result})
+	return nil
+}

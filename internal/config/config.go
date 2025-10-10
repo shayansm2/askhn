@@ -10,9 +10,10 @@ import (
 type Config struct {
 	TaskQueueName          string
 	OllamaBaseURL          string
-	OllamaModel            string
 	GeminiApiKey           string
-	GeminiModel            string
+	OpenAIApiKey           string
+	LLMModel               string
+	LLM                    string
 	ElasticsearchURL       string
 	ElasticsearchUser      string
 	ElasticsearchPass      string
@@ -32,10 +33,11 @@ func Load() *Config {
 			// temporal configs
 			TaskQueueName: getEnv("TEMPORALTASK_QUEUE_NAME", "default"),
 			// LLM configs
+			LLM:           getEnv("LLM", "ollama"),
 			OllamaBaseURL: getEnv("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
-			OllamaModel:   getEnv("OLLAMA_MODEL", "gemma3:latest"),
 			GeminiApiKey:  getEnv("GEMINI_API_KEY", ""),
-			GeminiModel:   getEnv("GEMINI_MODEL", "gemini-2.5-flash"),
+			OpenAIApiKey:  getEnv("OPEN_AI_API_KEY", ""),
+			LLMModel:      getEnv("LLM_MODEL", "gemma3:latest"),
 			// knowledge base configs
 			ElasticsearchURL:       getEnv("ELASTICSEARCH_URL", "http://localhost:9200"),
 			ElasticsearchUser:      getEnv("ELASTICSEARCH_USER", "user"),
