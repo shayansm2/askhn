@@ -21,6 +21,7 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+	engine.Use(api.TemporalClientMiddleware(temporalClient))
 	engine.GET("v1/chat", api.HandlerFunc(api.ChatV1).Handle)
 	engine.POST("v2/chat/", api.HandlerFunc(api.CreateChatV2).Handle)
 	engine.GET("v2/chat/:wfid", api.HandlerFunc(api.GetChatV2).Handle)

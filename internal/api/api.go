@@ -25,7 +25,7 @@ func ChatV1(c *gin.Context) *ApiError {
 		ID:        wfid,
 		TaskQueue: config.Load().TaskQueueName,
 	}
-	temporalClient := temporal.GetClient()
+	temporalClient := GetTemporalClient(c)
 	wf, err := temporalClient.ExecuteWorkflow(context.Background(), options, temporal.RetrivalAugmentedGenerationWorkflow, message)
 	if err != nil {
 		return ServerError("failed to execute workflow: " + err.Error())
@@ -52,7 +52,7 @@ func CreateChatV2(c *gin.Context) *ApiError {
 		return BadRequestError("side must be agree or disagree")
 	}
 	wfid := "v2-chat-" + req.Side + "-" + uuid.New().String()
-	temporalClient := temporal.GetClient()
+	temporalClient := GetTemporalClient(c)
 	_, err := temporalClient.ExecuteWorkflow(
 		context.Background(),
 		client.StartWorkflowOptions{
@@ -81,7 +81,7 @@ func GetChatV2(c *gin.Context) *ApiError {
 	if wfid == "" {
 		return BadRequestError("wfid is required")
 	}
-	temporalClient := temporal.GetClient()
+	temporalClient := GetTemporalClient(c)
 	desc, err := temporalClient.DescribeWorkflowExecution(context.Background(), wfid, "")
 	if err != nil {
 		return ServerError("failed to describe workflow: " + err.Error())
@@ -122,7 +122,7 @@ func AgenticChat(c *gin.Context) *ApiError {
 		ID:        wfid,
 		TaskQueue: config.Load().TaskQueueName,
 	}
-	temporalClient := temporal.GetClient()
+	temporalClient := GetTemporalClient(c)
 	wf, err := temporalClient.ExecuteWorkflow(context.Background(), options, temporal.AgenticRAGWorkflow, message)
 	if err != nil {
 		return ServerError("failed to execute workflow: " + err.Error())
