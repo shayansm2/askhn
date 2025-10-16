@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/shayansm2/askhn/internal/config"
+	"github.com/shayansm2/askhn/internal/elasticsearch"
 	"github.com/shayansm2/askhn/internal/llm"
 	"github.com/shayansm2/askhn/internal/temporal"
 	"go.temporal.io/sdk/worker"
@@ -31,6 +32,7 @@ func main() {
 
 	w := worker.New(c, cnf.TaskQueueName, worker.Options{})
 	llm := getLLM(cnf)
+	elasticsearch.CreateElasticsearchIndex()
 
 	w.RegisterWorkflow(temporal.SimpleChatWorkflow)
 	w.RegisterWorkflow(temporal.IndexHackerNewsStoryWorkflow)
