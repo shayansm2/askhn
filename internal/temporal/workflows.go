@@ -182,7 +182,11 @@ func AgenticRAGWorkflow(ctx workflow.Context, message string) (string, error) {
 	context := ""
 	history := make([]string, 0)
 	for range 5 {
-		systemMsg, err := llm.GenerateSysPrompt("agentic", map[string]string{"Context": context, "History": strings.Join(history, "\n")})
+		prevHistory := ""
+		if len(history) > 1 {
+			prevHistory = strings.Join(history[:len(history)-1], "\n")
+		}
+		systemMsg, err := llm.GenerateSysPrompt("agentic", map[string]string{"Context": context, "History": prevHistory})
 		if err != nil {
 			return "", fmt.Errorf("failed to generate system prompt: %s", err)
 		}

@@ -23,7 +23,6 @@ Build an end-to-end, agentic RAG application that:
 - Exposes an interface (API and UI)
 <!--- Collects user feedback and supports monitoring-->
 
-
 <!--### Checklist mapping-->
 
 <!--- [x] Select dataset: Hacker News stories and comments-->
@@ -38,8 +37,8 @@ Build an end-to-end, agentic RAG application that:
 ---
 
 ## Datasets :
-[Hacker News](https://news.ycombinator.com/news) stories and comments via [official Firebase API](https://github.com/HackerNews/API?tab=readme-ov-file) and [Algolia Search](https://hn.algolia.com/).
 
+[Hacker News](https://news.ycombinator.com/news) stories and comments via [official Firebase API](https://github.com/HackerNews/API?tab=readme-ov-file) and [Algolia Search](https://hn.algolia.com/).
 
 ## Tech Stack
 
@@ -160,6 +159,7 @@ Manual kick-off can be added via a CLI or Temporal UI signal; see `internal/temp
 
 <!--todo vector search-->
 <!--- Retrieval: `TextSearch(query, size)` boosts `title` over `text` and returns ES documents.-->
+
 - Prompting: system prompts are generated from templates (`internal/llm/prompts/`) with injected context.
 - Classic flows:
   - `RetrivalAugmentedGenerationWorkflow` builds context from top-K docs and calls `LLMActivities.Chat`.

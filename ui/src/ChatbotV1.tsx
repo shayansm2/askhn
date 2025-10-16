@@ -25,9 +25,8 @@ const ChatbotV1 = () => {
   const [agent] = useXAgent<string, { message: string }, string>({
     request: async ({ message }, { onSuccess, onError }) => {
       try {
-        const response = await fetch(
-          "http://localhost:8080/v3/chat?message=" + message,
-        );
+        const apiUrl = import.meta.env.BACKEND_URL || "http://localhost:8080";
+        const response = await fetch(`${apiUrl}/v3/chat?message=${message}`);
         const data = await response.json();
         onSuccess(data.result);
       } catch (error) {

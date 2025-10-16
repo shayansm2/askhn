@@ -61,6 +61,7 @@ services:
       - OLLAMA_BASE_URL=http://host.docker.internal:11434/v1
     volumes:
       - ./.env:/app/.env
+
   api:
     container_name: askhn-api
     build: .
@@ -75,3 +76,13 @@ services:
       - "8080:8080"
     volumes:
       - ./.env:/app/.env
+
+  ui:
+    container_name: askhn-ui
+    build: ./ui
+    depends_on:
+      - api
+    ports:
+      - "5173:5173"
+    environment:
+      - BACKEND_URL=http://api:8080
