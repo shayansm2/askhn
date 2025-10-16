@@ -180,8 +180,9 @@ func AgenticRAGWorkflow(ctx workflow.Context, message string) (string, error) {
 	var hnActivities *HackerNewsApiActivities
 
 	context := ""
+	history := make([]string, 0)
 	for range 5 {
-		systemMsg, err := llm.GenerateSysPrompt("agentic", map[string]string{"Context": context})
+		systemMsg, err := llm.GenerateSysPrompt("agentic", map[string]string{"Context": context, "History": strings.Join(history, "\n")})
 		if err != nil {
 			return "", fmt.Errorf("failed to generate system prompt: %s", err)
 		}
@@ -219,7 +220,11 @@ func AgenticRAGWorkflow(ctx workflow.Context, message string) (string, error) {
 		for _, doc := range esDocs {
 			contextBuilder.WriteString(fmt.Sprintf("title: %s\ncomment: %s\n\n", doc.Title, doc.Text))
 		}
-		context += "\n\n" + strings.TrimSpace(contextBuilder.String())
+		context = strings.TrimSpace(contextBuilder.String())
+		if context == "" {
+			context = "No data found in internal knowledge base."
+		}
+		history = append(history, fmt.Sprintf("action: %v \t result: %v", agentResponse.Action, context))
 	}
 	systemMsg, err := llm.GenerateSysPrompt("assist", map[string]string{"Context": context})
 	var response string

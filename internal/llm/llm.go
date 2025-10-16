@@ -2,6 +2,8 @@ package llm
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -37,7 +39,7 @@ func ChatWithSchema(llm LLM, message Message, v any) error {
 	response = re.ReplaceAllString(response, "")
 
 	if err := json.Unmarshal([]byte(response), v); err != nil {
-		return err
+		return errors.Join(err, fmt.Errorf(response))
 	}
 	return nil
 }
