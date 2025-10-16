@@ -9,6 +9,7 @@ import (
 
 type Config struct {
 	TaskQueueName          string
+	TemporalHost           string
 	OllamaBaseURL          string
 	GeminiApiKey           string
 	OpenAIApiKey           string
@@ -32,6 +33,7 @@ func Load() *Config {
 		cfg = &Config{
 			// temporal configs
 			TaskQueueName: getEnv("TEMPORALTASK_QUEUE_NAME", "default"),
+			TemporalHost:  getEnv("TEMPORAL_HOST", "localhost:7233"),
 			// LLM configs
 			LLM:           getEnv("LLM", "ollama"),
 			OllamaBaseURL: getEnv("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
