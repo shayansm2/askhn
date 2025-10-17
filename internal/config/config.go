@@ -15,6 +15,7 @@ type Config struct {
 	OpenAIApiKey           string
 	LLMModel               string
 	LLM                    string
+	EmbeddingModel         string
 	ElasticsearchURL       string
 	ElasticsearchUser      string
 	ElasticsearchPass      string
@@ -35,11 +36,12 @@ func Load() *Config {
 			TaskQueueName: getEnv("TEMPORALTASK_QUEUE_NAME", "default"),
 			TemporalHost:  getEnv("TEMPORAL_HOST", "localhost:7233"),
 			// LLM configs
-			LLM:           getEnv("LLM", "ollama"),
-			OllamaBaseURL: getEnv("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
-			GeminiApiKey:  getEnv("GEMINI_API_KEY", ""),
-			OpenAIApiKey:  getEnv("OPEN_AI_API_KEY", ""),
-			LLMModel:      getEnv("LLM_MODEL", "gemma3:latest"),
+			LLM:            getEnv("LLM", "ollama"),
+			OllamaBaseURL:  getEnv("OLLAMA_BASE_URL", "http://localhost:11434"),
+			GeminiApiKey:   getEnv("GEMINI_API_KEY", ""),
+			OpenAIApiKey:   getEnv("OPEN_AI_API_KEY", ""),
+			LLMModel:       getEnv("LLM_MODEL", "gemma3:latest"),
+			EmbeddingModel: getEnv("EMBEDDING_MODEL", "mxbai-embed-large"),
 			// knowledge base configs
 			ElasticsearchURL:       getEnv("ELASTICSEARCH_URL", "http://localhost:9200"),
 			ElasticsearchUser:      getEnv("ELASTICSEARCH_USER", "user"),

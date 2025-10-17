@@ -78,7 +78,7 @@ func RetrivalAugmentedGenerationWorkflow(ctx workflow.Context, message string) (
 	ctx = workflow.WithActivityOptions(ctx, ao)
 	var esActivities *ElasticsearchActivities
 	var esDocs []elasticsearch.ESDocument
-	err := workflow.ExecuteActivity(ctx, esActivities.Search, &SearchRequest{Query: message, Size: 5}).Get(ctx, &esDocs)
+	err := workflow.ExecuteActivity(ctx, esActivities.TextSearch, &SearchRequest{Query: message, Size: 5}).Get(ctx, &esDocs)
 	if err != nil {
 		return "", fmt.Errorf("failed to search on elasticsearch: %s", err)
 	}
@@ -121,7 +121,7 @@ func ProsConsRagWorkflow(ctx workflow.Context, params ProsConsRagParams) (string
 	ctx = workflow.WithActivityOptions(ctx, ao)
 	var esActivities *ElasticsearchActivities
 	var esDocs []elasticsearch.ESDocument
-	err := workflow.ExecuteActivity(ctx, esActivities.Search, &SearchRequest{Query: params.Message, Size: 10}).Get(ctx, &esDocs)
+	err := workflow.ExecuteActivity(ctx, esActivities.TextSearch, &SearchRequest{Query: params.Message, Size: 10}).Get(ctx, &esDocs)
 	if err != nil {
 		return "", fmt.Errorf("failed to search on elasticsearch: %s", err)
 	}
@@ -216,7 +216,7 @@ func AgenticRAGWorkflow(ctx workflow.Context, message string) (string, error) {
 		}
 
 		var esDocs []elasticsearch.ESDocument
-		err = workflow.ExecuteActivity(ctx, esActivities.Search, &SearchRequest{Query: message, Size: 5}).Get(ctx, &esDocs)
+		err = workflow.ExecuteActivity(ctx, esActivities.HybridSearch, &SearchRequest{Query: message, Size: 10}).Get(ctx, &esDocs)
 		if err != nil {
 			return "", fmt.Errorf("failed to search on elasticsearch: %s", err)
 		}

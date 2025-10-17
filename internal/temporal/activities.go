@@ -47,8 +47,16 @@ type SearchRequest struct {
 	Size  int
 }
 
-func (i *ElasticsearchActivities) Search(ctx context.Context, req *SearchRequest) ([]elasticsearch.ESDocument, error) {
+func (i *ElasticsearchActivities) TextSearch(ctx context.Context, req *SearchRequest) ([]elasticsearch.ESDocument, error) {
 	return elasticsearch.TextSearch(req.Query, req.Size)
+}
+
+func (i *ElasticsearchActivities) VectorSearch(ctx context.Context, req *SearchRequest) ([]elasticsearch.ESDocument, error) {
+	return elasticsearch.VectorSearch(req.Query, req.Size)
+}
+
+func (i *ElasticsearchActivities) HybridSearch(ctx context.Context, req *SearchRequest) ([]elasticsearch.ESDocument, error) {
+	return elasticsearch.HybridSearch(req.Query, req.Size)
 }
 
 func (i *ElasticsearchActivities) GetAllStories(ctx context.Context) ([]string, error) {

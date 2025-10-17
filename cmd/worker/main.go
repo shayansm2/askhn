@@ -19,7 +19,7 @@ func getLLM(cnf *config.Config) llm.LLM {
 		llm := llm.NewGeminiLLM(cnf.GeminiApiKey, cnf.LLMModel)
 		return &llm
 	case "ollama":
-		llm := llm.NewOllamaLLM(cnf.OllamaBaseURL, cnf.LLMModel)
+		llm := llm.NewOllamaLLM(cnf.OllamaBaseURL+"/v1", cnf.LLMModel)
 		return &llm
 	default:
 		panic("LLM env variable should be one of openai, gemini or ollama")
