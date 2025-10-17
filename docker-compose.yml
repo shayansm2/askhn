@@ -77,6 +77,23 @@ services:
     volumes:
       - ./.env:/app/.env
 
+  ollama:
+    container_name: ollama
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    command: >
+      sh -c "
+        ollama serve &
+        sleep 10 &&
+        ollama pull mxbai-embed-large:latest &&
+        wait
+      "
+
   ui:
     container_name: askhn-ui
     build: ./ui
@@ -86,3 +103,6 @@ services:
       - "5173:5173"
     environment:
       - BACKEND_URL=http://api:8080
+
+volumes:
+  ollama_data:
